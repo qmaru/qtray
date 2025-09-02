@@ -46,6 +46,10 @@ func main() {
 		log.Fatal("unmarshal config error: ", err)
 	}
 
+	if trayConfig.Process.Name == "" || trayConfig.Process.Path == "" {
+		log.Fatal("config error: process name or path is empty")
+	}
+
 	systray.Run(onReady(trayConfig, iconData), onExit)
 }
 
@@ -101,6 +105,7 @@ func onExit() {
 
 func RunProcess(name, path string, args []string) (*exec.Cmd, <-chan error, error) {
 	exePath := filepath.Join(path, name)
+	exePath = os.ExpandEnv(exePath)
 	if !filepath.IsAbs(exePath) {
 		exePath, _ = filepath.Abs(exePath)
 	}
@@ -115,7 +120,7 @@ func RunProcess(name, path string, args []string) (*exec.Cmd, <-chan error, erro
 	}
 
 	cmd := exec.Command(exePath, replacedArgs...)
-	cmd.Dir = path
+	cmd.Dir = filepath.Dir(exePath)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
