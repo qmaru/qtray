@@ -16,12 +16,13 @@ import (
 	"github.com/getlantern/systray"
 )
 
+const iconFileName = "app.ico"
+
 //go:embed app.ico
 var iconFS embed.FS
 
 type Config struct {
 	Title   string  `json:"title"`
-	Icon    string  `json:"icon"`
 	Process Process `json:"process"`
 	Admin   bool    `json:"admin"`
 }
@@ -43,7 +44,7 @@ func main() {
 		log.Fatal("unmarshal config error: ", err)
 	}
 
-	iconData, err := iconFS.ReadFile(trayConfig.Icon)
+	iconData, err := iconFS.ReadFile(iconFileName)
 	if err != nil {
 		log.Fatal("load icon error: ", err)
 	}
@@ -63,13 +64,18 @@ func onReady(config Config, iconData []byte) func() {
 			mQuit := systray.AddMenuItem("exit", "exit")
 
 			if utils.IsProcessRunning(config.Process.Name) {
-				showErrorAndQuit(fmt.Sprintf("%s is running", config.Process.Name))
+				utils.ShowMsgBox(fmt.Sprintf("%s is running", config.Process.Name), utils.MB_OK)
+				systray.Quit()
 				return
 			}
 
 			if config.Admin {
 				if !utils.IsAdmin() {
-					utils.ShowMsgBox("run as administrator")
+					result := utils.ShowMsgBox("Please run as administrator", utils.MB_OKCANCEL)
+					if result == 2 {
+						systray.Quit()
+						return
+					}
 					utils.AutoElevateSelf()
 					systray.Quit()
 					return
@@ -78,13 +84,14 @@ func onReady(config Config, iconData []byte) func() {
 
 			cmd, waitCh, err := RunProcess(config.Process.Name, config.Process.Path, config.Process.Args)
 			if err != nil {
-				showErrorAndQuit(fmt.Sprintf("start %s failed: %v", config.Process.Name, err))
+				utils.ShowMsgBox(fmt.Sprintf("start %s failed: %v", config.Process.Name, err), utils.MB_OK)
 				return
 			}
 
 			go func() {
 				<-mQuit.ClickedCh
 				if cmd.Process != nil {
+					_ = cmd.Process.Signal(syscall.SIGTERM)
 					_ = cmd.Process.Kill()
 				}
 				systray.Quit()
@@ -93,8 +100,9 @@ func onReady(config Config, iconData []byte) func() {
 			go func() {
 				waitErr := <-waitCh
 				if waitErr != nil {
-					utils.ShowMsgBox(fmt.Sprintf("process exited with error: %v", waitErr))
+					utils.ShowMsgBox(fmt.Sprintf("process exited with error: %v", waitErr), utils.MB_OK)
 				}
+				systray.Quit()
 			}()
 
 		}, onExit)
@@ -139,9 +147,4 @@ func RunProcess(name, path string, args []string) (*exec.Cmd, <-chan error, erro
 	}()
 
 	return cmd, waitCh, nil
-}
-
-func showErrorAndQuit(msg string) {
-	utils.ShowMsgBox(msg)
-	systray.Quit()
 }

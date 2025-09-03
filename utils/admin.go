@@ -8,6 +8,16 @@ import (
 	"golang.org/x/sys/windows"
 )
 
+type MessageBoxButtons uint
+
+const (
+	MB_OK          MessageBoxButtons = 0x0 // Shows "OK" button only
+	MB_OKCANCEL    MessageBoxButtons = 0x1 // Shows "OK" and "Cancel" buttons
+	MB_YESNOCANCEL MessageBoxButtons = 0x3 // Shows "Yes", "No", and "Cancel" buttons
+	MB_YESNO       MessageBoxButtons = 0x4 // Shows "Yes" and "No" buttons
+	MB_RETRYCANCEL MessageBoxButtons = 0x5 // Shows "Retry" and "Cancel" buttons
+)
+
 func IsAdmin() bool {
 	token := windows.GetCurrentProcessToken()
 	defer token.Close()
@@ -22,16 +32,17 @@ func IsAdmin() bool {
 	return isMember
 }
 
-func ShowMsgBox(msg string) {
+func ShowMsgBox(msg string, btnType MessageBoxButtons) int {
 	title := "Message"
 	msgPtr, _ := syscall.UTF16PtrFromString(msg)
 	titlePtr, _ := syscall.UTF16PtrFromString(title)
 	modUser32 := syscall.NewLazyDLL("user32.dll")
 	procMessageBox := modUser32.NewProc("MessageBoxW")
-	_, _, _ = procMessageBox.Call(0,
+	ret, _, _ := procMessageBox.Call(0,
 		uintptr(unsafe.Pointer(msgPtr)),
 		uintptr(unsafe.Pointer(titlePtr)),
-		0)
+		uintptr(btnType))
+	return int(ret)
 }
 
 func AutoElevateSelf() {

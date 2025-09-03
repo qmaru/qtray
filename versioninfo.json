@@ -21,7 +21,7 @@
     "StringFileInfo": {
         "Comments": "",
         "CompanyName": "",
-        "FileDescription": "Easily run a Windows tray application.",
+        "FileDescription": "Easily run a Windows tray application to manage a process",
         "FileVersion": "1.0.0.0",
         "InternalName": "qtray.exe",
         "LegalCopyright": "",
