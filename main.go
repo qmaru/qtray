@@ -1,3 +1,4 @@
+//go:generate goversioninfo -64
 package main
 
 import (
@@ -15,7 +16,7 @@ import (
 	"github.com/getlantern/systray"
 )
 
-//go:embed icon.ico
+//go:embed app.ico
 var iconFS embed.FS
 
 type Config struct {
