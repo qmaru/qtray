@@ -21,6 +21,7 @@ var iconFS embed.FS
 
 type Config struct {
 	Title   string  `json:"title"`
+	Icon    string  `json:"icon"`
 	Process Process `json:"process"`
 	Admin   bool    `json:"admin"`
 }
@@ -32,11 +33,6 @@ type Process struct {
 }
 
 func main() {
-	iconData, err := iconFS.ReadFile("icon.ico")
-	if err != nil {
-		log.Fatal("load icon error: ", err)
-	}
-
 	config, err := os.ReadFile("config.json")
 	if err != nil {
 		log.Fatal("load config error: ", err)
@@ -45,6 +41,11 @@ func main() {
 	var trayConfig Config
 	if err := json.Unmarshal(config, &trayConfig); err != nil {
 		log.Fatal("unmarshal config error: ", err)
+	}
+
+	iconData, err := iconFS.ReadFile(trayConfig.Icon)
+	if err != nil {
+		log.Fatal("load icon error: ", err)
 	}
 
 	if trayConfig.Process.Name == "" || trayConfig.Process.Path == "" {
