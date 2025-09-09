@@ -11,7 +11,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"syscall"
-	"time"
 
 	"qtray/internal/helper"
 	"qtray/internal/utils"
@@ -149,17 +148,7 @@ func onReady() {
 func onExit() {
 	if currentCmd != nil && currentCmd.Process != nil {
 		_ = currentCmd.Process.Signal(syscall.SIGTERM)
-
-		done := make(chan error, 1)
-		go func() {
-			done <- currentCmd.Wait()
-		}()
-
-		select {
-		case <-done:
-		case <-time.After(5 * time.Second):
-			_ = currentCmd.Process.Kill()
-		}
+		_ = currentCmd.Process.Kill()
 	}
 }
 
