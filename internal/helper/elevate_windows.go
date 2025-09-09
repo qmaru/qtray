@@ -1,4 +1,7 @@
-package utils
+//go:build windows
+// +build windows
+
+package helper
 
 import (
 	"os"
@@ -8,17 +11,19 @@ import (
 	"golang.org/x/sys/windows"
 )
 
-type MessageBoxButtons uint
-
 const (
-	MB_OK          MessageBoxButtons = 0x0 // Shows "OK" button only
-	MB_OKCANCEL    MessageBoxButtons = 0x1 // Shows "OK" and "Cancel" buttons
-	MB_YESNOCANCEL MessageBoxButtons = 0x3 // Shows "Yes", "No", and "Cancel" buttons
-	MB_YESNO       MessageBoxButtons = 0x4 // Shows "Yes" and "No" buttons
-	MB_RETRYCANCEL MessageBoxButtons = 0x5 // Shows "Retry" and "Cancel" buttons
+	WIN_MB_OK          uint = 0x0 // Shows "OK" button only
+	WIN_MB_OKCANCEL    uint = 0x1 // Shows "OK" and "Cancel" buttons
+	WIN_MB_YESNOCANCEL uint = 0x3 // Shows "Yes", "No", and "Cancel" buttons
+	WIN_MB_YESNO       uint = 0x4 // Shows "Yes" and "No" buttons
+	WIN_MB_RETRYCANCEL uint = 0x5 // Shows "Retry" and "Cancel" buttons
 )
 
-func IsAdmin() bool {
+type WindowsTrayHelper struct{}
+
+var _ TrayHelper = (*WindowsTrayHelper)(nil)
+
+func (t *WindowsTrayHelper) IsAdmin() bool {
 	token := windows.GetCurrentProcessToken()
 	defer token.Close()
 	adminSID, err := windows.CreateWellKnownSid(windows.WinBuiltinAdministratorsSid)
@@ -32,7 +37,7 @@ func IsAdmin() bool {
 	return isMember
 }
 
-func ShowMsgBox(msg string, btnType MessageBoxButtons) int {
+func (t *WindowsTrayHelper) ShowMsgBox(msg string, btnType uint) int {
 	title := "Message"
 	msgPtr, _ := syscall.UTF16PtrFromString(msg)
 	titlePtr, _ := syscall.UTF16PtrFromString(title)
@@ -45,7 +50,7 @@ func ShowMsgBox(msg string, btnType MessageBoxButtons) int {
 	return int(ret)
 }
 
-func AutoElevateSelf() {
+func (t *WindowsTrayHelper) AutoElevateSelf() {
 	exe, err := syscall.UTF16PtrFromString(os.Args[0])
 	if err != nil {
 		return
@@ -54,4 +59,8 @@ func AutoElevateSelf() {
 	modShell32 := syscall.NewLazyDLL("shell32.dll")
 	procShellExec := modShell32.NewProc("ShellExecuteW")
 	_, _, _ = procShellExec.Call(0, uintptr(unsafe.Pointer(verbPtr)), uintptr(unsafe.Pointer(exe)), 0, 0, 1)
+}
+
+func NewTray() *WindowsTrayHelper {
+	return &WindowsTrayHelper{}
 }
