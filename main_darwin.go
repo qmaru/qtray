@@ -160,8 +160,6 @@ func onExit() {
 		case <-time.After(5 * time.Second):
 			_ = currentCmd.Process.Kill()
 		}
-
-		_ = currentCmd.Process.Kill()
 	}
 }
 
