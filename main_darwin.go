@@ -4,6 +4,7 @@
 package main
 
 import (
+	"embed"
 	"fmt"
 	"os"
 	"os/exec"
@@ -16,22 +17,34 @@ import (
 	"github.com/getlantern/systray"
 )
 
+//go:embed build/darwin/qtray.app/Contents/Resources/qtray.icns
+var iconFS embed.FS
+
 var currentCmd *exec.Cmd
 var tray = helper.NewTray()
 var config *utils.Config
+var iconData []byte
 
 func init() {
-	c, err := utils.LoadConfig("config.json")
+	configPath := filepath.Join(filepath.Dir(os.Args[0]), "config.json")
+	c, err := utils.LoadConfig(configPath)
 	if err != nil {
 		tray.ShowMsgBox("config.json not found", 0)
 		return
 	}
 
+	i, err := utils.LoadIcon(iconFS, "build/darwin/qtray.app/Contents/Resources/qtray.icns")
+	if err != nil {
+		tray.ShowMsgBox("load icon failed", 0)
+		return
+	}
+
 	config = c
+	iconData = i
 }
 
 func main() {
-	if config.Process.Name == "" || config.Process.Path == "" {
+	if config.Process.Name == "" {
 		tray.ShowMsgBox("process config error", 0)
 		return
 	}
@@ -39,6 +52,9 @@ func main() {
 }
 
 func onReady() {
+	systray.SetIcon(iconData)
+	systray.SetTooltip(config.Title)
+
 	_, mQuit := utils.CreateTrayMenu(config.Title)
 
 	if utils.IsProcessRunning(config.Process.Name) {
@@ -49,7 +65,7 @@ func onReady() {
 
 	if config.Admin {
 		if !tray.IsAdmin() {
-			result := tray.ShowMsgBox("Please run as root", 0)
+			result := tray.ShowMsgBox("Please run as root", 2)
 			if result == 2 {
 				systray.Quit()
 				return
@@ -94,6 +110,8 @@ func RunProcess(name, path string, args []string) (*exec.Cmd, <-chan error, erro
 		return nil, nil, err
 	}
 	replacedArgs := utils.ExpandArgs(args)
+
+	fmt.Printf("Trying to execute: %s\n", exePath)
 
 	cmd := exec.Command(exePath, replacedArgs...)
 	cmd.Dir = filepath.Dir(exePath)

@@ -1,7 +1,6 @@
 //go:build windows
 // +build windows
 
-//
 //go:generate goversioninfo -64 -o resource_windows.syso build/windows/versioninfo.json
 package main
 
@@ -45,7 +44,7 @@ func init() {
 }
 
 func main() {
-	if config.Process.Name == "" || config.Process.Path == "" {
+	if config.Process.Name == "" {
 		tray.ShowMsgBox("process config error", helper.WIN_MB_OK)
 		return
 	}

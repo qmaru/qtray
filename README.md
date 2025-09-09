@@ -5,11 +5,11 @@
 ```shell
 # windows
 # go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo
-go generate
-go build -ldflags='-s -w -H=windowsgui'
+.\build_windows.bat
 
 # macos
-# in progress
+chmod +x build_darwin.sh
+./build_darwin.sh
 ```
 
 ## Use Env
@@ -17,4 +17,7 @@ go build -ldflags='-s -w -H=windowsgui'
 ```shell
 # windows
 `${onedrive}\\Documents`
+
+# macOS
+`${HOME}/Documents`
 ```

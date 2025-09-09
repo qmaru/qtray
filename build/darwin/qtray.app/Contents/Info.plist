@@ -3,14 +3,20 @@
 <plist version="1.0">
     <dict>
         <key>CFBundleName</key>
-        <string>SystrayApp</string>
+        <string>QTray</string>
         <key>CFBundleExecutable</key>
-        <string>go-executable</string>
+        <string>qtray</string>
         <key>CFBundleIconFile</key>
-        <string>SystrayApp.icns</string>
+        <string>qtray.icns</string>
+        <key>CFBundleIdentifier</key>
+        <string>moe.qmaru.qtray</string>
+        <key>CFBundleVersion</key>
+        <string>1.0.0</string>
         <key>NSHighResolutionCapable</key>
         <string>True</string>
         <key>LSUIElement</key>
+        <string>1</string>
+        <key>LSBackgroundOnly</key>
         <string>1</string>
     </dict>
 </plist>

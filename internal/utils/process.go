@@ -24,14 +24,26 @@ func IsProcessRunning(name string) bool {
 }
 
 func BuildExePath(name, path string) (string, error) {
-	exePath := filepath.Join(path, name)
-	exePath = os.ExpandEnv(exePath)
-	if !filepath.IsAbs(exePath) {
-		exePath, _ = filepath.Abs(exePath)
+	var exePath string
+
+	if path == "" {
+		exePath = name
+	} else if filepath.IsAbs(path) {
+		exePath = path
+	} else {
+		exePath = filepath.Join(path, name)
+		exePath = os.ExpandEnv(exePath)
+		if !filepath.IsAbs(exePath) {
+			exePath, _ = filepath.Abs(exePath)
+		}
 	}
-	if _, err := os.Stat(exePath); err != nil {
-		return "", fmt.Errorf("executable %s not found in %s", name, path)
+
+	if path != "" && !filepath.IsAbs(path) {
+		if _, err := os.Stat(exePath); err != nil {
+			return "", fmt.Errorf("executable %s not found in %s", name, path)
+		}
 	}
+
 	return exePath, nil
 }
 
