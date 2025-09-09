@@ -29,4 +29,4 @@ cd ..
 # cleanup
 rm -rf "${TEMP_DIR}"
 
-echo "✅ Build completed: ${OUTPUT_ZIP}"
+echo "Build completed: ${OUTPUT_ZIP}"

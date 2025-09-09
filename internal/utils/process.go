@@ -15,7 +15,17 @@ func IsProcessRunning(name string) bool {
 	}
 
 	for _, p := range processes {
-		if p.Executable() == name {
+		executable := p.Executable()
+
+		if executable == name {
+			return true
+		}
+
+		if filepath.Base(executable) == name {
+			return true
+		}
+
+		if filepath.Base(executable) == filepath.Base(name) {
 			return true
 		}
 	}

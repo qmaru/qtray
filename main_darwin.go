@@ -5,6 +5,7 @@ package main
 
 import (
 	"embed"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -26,12 +27,31 @@ var config *utils.Config
 var iconData []byte
 
 func init() {
-	configPath := filepath.Join(filepath.Dir(os.Args[0]), "config.json")
-	c, err := utils.LoadConfig(configPath)
-	if err != nil {
-		tray.ShowMsgBox("config.json not found", 0)
-		return
+	homeDir, _ := os.UserHomeDir()
+	userConfigPath := filepath.Join(homeDir, "Library", "Application Support", "qtray", "config.json")
+
+	var c *utils.Config
+
+	if _, err := os.Stat(userConfigPath); os.IsNotExist(err) {
+		c = createDefaultConfig()
+		err = saveConfigToPath(c, userConfigPath)
+		if err != nil {
+			tray.ShowMsgBox(fmt.Sprintf("save default config failed: %v", err), 0)
+			return
+		}
+	} else {
+		c, err = utils.LoadConfig(userConfigPath)
+		if err != nil {
+			c = createDefaultConfig()
+			err = saveConfigToPath(c, userConfigPath)
+			if err != nil {
+				tray.ShowMsgBox(fmt.Sprintf("save default config failed: %v", err), 0)
+				return
+			}
+		}
 	}
+
+	config = c
 
 	i, err := utils.LoadIcon(iconFS, "build/darwin/qtray.app/Contents/Resources/qtray.icns")
 	if err != nil {
@@ -41,6 +61,27 @@ func init() {
 
 	config = c
 	iconData = i
+}
+
+func createDefaultConfig() *utils.Config {
+	return &utils.Config{
+		Title: "tray test",
+		Process: utils.Process{
+			Name: "tail",
+			Path: "",
+			Args: []string{"-f", "/dev/null"},
+		},
+		Admin: false,
+	}
+}
+
+func saveConfigToPath(config *utils.Config, path string) error {
+	os.MkdirAll(filepath.Dir(path), 0755)
+	data, err := json.MarshalIndent(config, "", "    ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, data, 0644)
 }
 
 func main() {
