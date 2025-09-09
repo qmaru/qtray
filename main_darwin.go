@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"syscall"
+	"time"
 
 	"qtray/internal/helper"
 	"qtray/internal/utils"
@@ -85,10 +86,21 @@ func saveConfigToPath(config *utils.Config, path string) error {
 }
 
 func main() {
-	if config.Process.Name == "" {
-		tray.ShowMsgBox("process config error", 0)
+	if config == nil {
+		tray.ShowMsgBox("config is not loaded", 0)
 		return
 	}
+
+	if config.Process.Name == "" {
+		tray.ShowMsgBox("process name is required", 0)
+		return
+	}
+
+	if utils.IsProcessRunning(config.Process.Name) {
+		tray.ShowMsgBox(fmt.Sprintf("%s is running", config.Process.Name), 0)
+		return
+	}
+
 	systray.Run(onReady, onExit)
 }
 
@@ -97,12 +109,6 @@ func onReady() {
 	systray.SetTooltip(config.Title)
 
 	_, mQuit := utils.CreateTrayMenu(config.Title)
-
-	if utils.IsProcessRunning(config.Process.Name) {
-		tray.ShowMsgBox(fmt.Sprintf("%s is running", config.Process.Name), 0)
-		systray.Quit()
-		return
-	}
 
 	if config.Admin {
 		if !tray.IsAdmin() {
@@ -120,6 +126,8 @@ func onReady() {
 	cmd, waitCh, err := RunProcess(config.Process.Name, config.Process.Path, config.Process.Args)
 	if err != nil {
 		tray.ShowMsgBox(fmt.Sprintf("start %s failed: %v", config.Process.Name, err), 0)
+		systray.Quit()
+		return
 	}
 
 	currentCmd = cmd
@@ -141,6 +149,18 @@ func onReady() {
 func onExit() {
 	if currentCmd != nil && currentCmd.Process != nil {
 		_ = currentCmd.Process.Signal(syscall.SIGTERM)
+
+		done := make(chan error, 1)
+		go func() {
+			done <- currentCmd.Wait()
+		}()
+
+		select {
+		case <-done:
+		case <-time.After(5 * time.Second):
+			_ = currentCmd.Process.Kill()
+		}
+
 		_ = currentCmd.Process.Kill()
 	}
 }
@@ -151,8 +171,6 @@ func RunProcess(name, path string, args []string) (*exec.Cmd, <-chan error, erro
 		return nil, nil, err
 	}
 	replacedArgs := utils.ExpandArgs(args)
-
-	fmt.Printf("Trying to execute: %s\n", exePath)
 
 	cmd := exec.Command(exePath, replacedArgs...)
 	cmd.Dir = filepath.Dir(exePath)

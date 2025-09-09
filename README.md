@@ -8,6 +8,7 @@
 .\build_windows.bat
 
 # macos
+# ~/Library/Application Support/qtray/config.json
 chmod +x build_darwin.sh
 ./build_darwin.sh
 ```
