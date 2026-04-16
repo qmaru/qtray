@@ -5,5 +5,10 @@
         "path": ".",
         "args": []
     },
+    "open": {
+        "title": "dashboard",
+        "tooltip": "open Dashboard",
+        "target": "http://localhost"
+    },
     "admin": false
 }

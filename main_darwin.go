@@ -104,10 +104,12 @@ func main() {
 }
 
 func onReady() {
-	systray.SetIcon(iconData)
-	systray.SetTooltip(config.Title)
-
-	_, mQuit := utils.CreateTrayMenu(config.Title)
+	menu := utils.NewTrayMenu(config.Title)
+	menu.AddOpenItem(config.Open.Title, config.Open.Tooltip, func() string {
+		return config.Open.Target
+	})
+	menu.Finalize()
+	quit := menu.GetQuitItem()
 
 	if config.Admin {
 		if !tray.IsAdmin() {
@@ -132,7 +134,7 @@ func onReady() {
 	currentCmd = cmd
 
 	go func() {
-		<-mQuit.ClickedCh
+		<-quit.ClickedCh
 		systray.Quit()
 	}()
 
